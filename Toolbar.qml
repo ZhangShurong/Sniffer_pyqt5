@@ -23,6 +23,12 @@ RowLayout {
         ComboBox {
             id: interfaceComboBox
             Layout.fillWidth: true
+            model: ["First", "Second", "Third"]
+            //model: interfaces.model
+            onActivated:{
+                console.log(index)
+             //   interfaces.selected(index)
+            }
         }
     }
 
