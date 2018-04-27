@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>PacketTable.qml</file>
+        <file>PacketTree.qml</file>
+        <file>Toolbar.qml</file>
+        <file>HexTree.qml</file>
+    </qresource>
+</RCC>
