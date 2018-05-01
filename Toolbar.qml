@@ -23,11 +23,11 @@ RowLayout {
         ComboBox {
             id: interfaceComboBox
             Layout.fillWidth: true
-            model: ["First", "Second", "Third"]
-            //model: interfaces.model
+            //model: ["First", "Second", "Third"]
+            model: interfaces.interfaceList()
             onActivated:{
                 console.log(index)
-             //   interfaces.selected(index)
+                interfaces.selected(index)
             }
         }
     }
@@ -69,12 +69,18 @@ RowLayout {
         id: start
         text: qsTr("Start")
         Layout.alignment: Qt.AlignBottom
+        onClicked:{
+            sniffer.start_sniff()
+        }
     }
 
     Button {
         id: pause
         text: qsTr("Pause")
         Layout.alignment: Qt.AlignBottom
+        onClicked:{
+            sniffer.stop_sniff()
+        }
     }
 
     Button {

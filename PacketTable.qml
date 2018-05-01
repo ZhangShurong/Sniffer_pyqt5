@@ -1,11 +1,13 @@
 import QtQuick 2.4
 import QtQuick.Controls 1.3
+
+
 TableView {
     currentRow: -2
 
     TableViewColumn{
         id: number_column
-       // role: number
+        role: "number"
         title: "No."
         width: 60
         horizontalAlignment: Text.AlignHCenter
@@ -13,7 +15,7 @@ TableView {
 
     TableViewColumn{
         id: time_column
-      //  role: time
+        role: "time"
         title: "Time"
         width: 80
         horizontalAlignment: Text.AlignHCenter
@@ -22,7 +24,7 @@ TableView {
 
     TableViewColumn{
         id: sourceip_column
-       // role: sourceip
+        role: "sourceip"
         title: "Source"
         width: 150
         horizontalAlignment: Text.AlignHCenter
@@ -30,7 +32,7 @@ TableView {
 
     TableViewColumn{
         id: destip_column
-       // role: destip
+        role: "destip"
         title: "Destination"
         width: 150
         horizontalAlignment: Text.AlignHCenter
@@ -38,7 +40,7 @@ TableView {
 
     TableViewColumn{
         id: protocol_column
-       // role: procotol
+        role: "procotol"
         title: "Protocol"
         width: 100
         horizontalAlignment: Text.AlignHCenter
@@ -46,7 +48,7 @@ TableView {
 
     TableViewColumn{
         id: lenth_column
-       // role: lenth
+        role: "lenth"
         title: "Lenth"
         width: 80
         horizontalAlignment: Text.AlignHCenter
@@ -54,11 +56,29 @@ TableView {
 
     TableViewColumn{
         id: info_column
-       // role: info
+        role: "info"
         title: "Information"
         width: parent.width - 620
         horizontalAlignment: Text.AlignHCenter
     }
+    model: ListModel {
+    id: libraryModel
+}
 
+    Connections {
+    target: sniffer
+    onNewPacketCatched: {
+        console.log("add")
+        libraryModel.append({
+                "number" : number, 
+                "time" : time, 
+                "sourceip": sourceip,
+                "destip": destip,
+                "procotol" : procotol,
+                "lenth": lenth,
+                "info": info
+            })
+    }
+  }
 }
 
