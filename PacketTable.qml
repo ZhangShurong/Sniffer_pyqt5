@@ -71,7 +71,6 @@ TableView {
     Connections {
     target: sniffer
     onNewPacketCatched: {
-        console.log("add")
         libraryModel.append({
                 "number" : number, 
                 "time" : time, 

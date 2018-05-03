@@ -11,6 +11,7 @@ import threading
 import tempfile
 import datetime
 import PacketItemModel
+import HTTPParser
 
 IFACE = 'wlp8s0'   #网卡名称
 STOP = True      #停止嗅探
@@ -69,7 +70,7 @@ class Sniffer(QObject):
         global PACKETS
         self._selectedPacket = PACKETS[index]
         self.packetItemModel.setPacket(self._selectedPacket)
-        print(self._selectedPacket.show2())
+        # print(self._selectedPacket.show2())
 
         
         
@@ -87,15 +88,20 @@ class Sniffer(QObject):
             self.newPacketCatched.emit(str(PACKET_NUM), nowTime, src, dst, proto, str(lenth), info)
             PACKETS.append(packet)
         elif int(packet.getlayer(Ether).type) == 2048 and STOP:
+            src = str(packet.getlayer(IP).src)
+            dst = str(packet.getlayer(IP).dst)
+            info = str(packet.summary())
+
             if int(packet.getlayer(IP).proto) == 6:
                 proto = 'TCP'
+                if packet.haslayer(TCP):
+                    if HTTPParser.isHTTP(packet):
+                        proto = 'HTTP'
+                        info = HTTPParser.generateInfo(packet)
             elif int(packet.getlayer(IP).proto) == 17:
                 proto = 'UDP'
             elif int(packet.getlayer(IP).proto) == 1:
                 proto = 'ICMP'
-            src = str(packet.getlayer(IP).src)
-            dst = str(packet.getlayer(IP).dst)
-            info = str(packet.summary())
             self.newPacketCatched.emit(str(PACKET_NUM), nowTime, src, dst, proto, str(lenth), info)
             PACKETS.append(packet)
         elif int(packet.getlayer(Ether).type) == 2054 and STOP:
