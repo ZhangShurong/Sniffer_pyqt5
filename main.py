@@ -9,6 +9,8 @@ import struct
 from scapy.all import *
 import threading
 import tempfile
+import datetime
+import PacketItemModel
 
 IFACE = 'wlp8s0'   #网卡名称
 STOP = True      #停止嗅探
@@ -18,6 +20,7 @@ SELECT_INFO = '' #选择行的详细信息
 SHOW2STR = ''   #show2()显示的字符串
 HEXSTR = ''     #hex()显示的信息
 FILTER = None   #过滤规则
+PACKET_NUM = 0
 
 class Interfaces(QObject):
         #获取网卡名称
@@ -42,26 +45,46 @@ class Interfaces(QObject):
     def selected(self, result):
         print(result)
 
-
     addElement = pyqtSignal(str, str)   #you call it like this  - addElement.emit("name", "value")
 
 class Sniffer(QObject):
     newPacketCatched = pyqtSignal(str, str, str, str, str, str, str,
                 arguments = ["number", "time","sourceip","destip","procotol","lenth","info"])
+    packetItemModel = PacketItemModel.TreeModel()
     def __init__(self, parent=None):
         super().__init__(parent)
-        #开始嗅探
+        self._filterList = ['TCP', 'UDP', 'ARP', 'ICMP']
+        self._selectedPacket = None
     
+    @pyqtSlot(result=list)
+    def filterList(self):
+        return self._filterList
+    
+    @pyqtSlot('int')
+    def selectFilter(self, index):
+        print(index)
+
+    @pyqtSlot('int')
+    def selectPacket(self, index):
+        global PACKETS
+        self._selectedPacket = PACKETS[index]
+        self.packetItemModel.setPacket(self._selectedPacket)
+        print(self._selectedPacket.show2())
+
+        
+        
     #处理数据包
     def handle_packets(self, packet):
-        print("packet")
+        nowTime=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        global PACKET_NUM
+        PACKET_NUM += 1
+        lenth = len(packet)
         if int(packet.getlayer(Ether).type) == 34525 and STOP:
             proto = 'IPv6'
             src = str(packet.getlayer(IPv6).src)
             dst = str(packet.getlayer(IPv6).dst)
             info = str(packet.summary())
-            self.newPacketCatched.emit("0", "now", src, dst, proto, "todo", info)
-            #self.packet_table.row_append(src, dst, proto, info)
+            self.newPacketCatched.emit(str(PACKET_NUM), nowTime, src, dst, proto, str(lenth), info)
             PACKETS.append(packet)
         elif int(packet.getlayer(Ether).type) == 2048 and STOP:
             if int(packet.getlayer(IP).proto) == 6:
@@ -73,8 +96,7 @@ class Sniffer(QObject):
             src = str(packet.getlayer(IP).src)
             dst = str(packet.getlayer(IP).dst)
             info = str(packet.summary())
-            #self.packet_table.row_append(src, dst, proto, info)
-            self.newPacketCatched.emit("0", "now", src, dst, proto, "todo", info)
+            self.newPacketCatched.emit(str(PACKET_NUM), nowTime, src, dst, proto, str(lenth), info)
             PACKETS.append(packet)
         elif int(packet.getlayer(Ether).type) == 2054 and STOP:
             proto = 'ARP'
@@ -82,7 +104,7 @@ class Sniffer(QObject):
             dst = str(packet.getlayer(ARP).pdst)
             info = str(packet.summary())
             #self.packet_table.row_append(src, dst, proto, info)
-            self.newPacketCatched.emit("0", "now", src, dst, proto, "todo", info)
+            self.newPacketCatched.emit(str(PACKET_NUM), nowTime, src, dst, proto, str(lenth), info)
             PACKETS.append(packet)
         else:
             pass
@@ -123,9 +145,11 @@ def main():
     engine.rootContext().setContextProperty('interfaces', interfaces)
     sniffer = Sniffer()
     engine.rootContext().setContextProperty('sniffer', sniffer)
+
+    packetItemModel = sniffer.packetItemModel
+    engine.rootContext().setContextProperty('packetItemModel', packetItemModel)
     engine.load(QUrl('main.qml'))
 
-    #engine = QtQml.QQmlApplicationEngine(QUrl('main.qml'))
     topLevel = QtCore.QObject()  
     topLevel = engine.rootObjects()[0]  
     

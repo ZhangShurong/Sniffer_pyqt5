@@ -62,9 +62,12 @@ TableView {
         horizontalAlignment: Text.AlignHCenter
     }
     model: ListModel {
-    id: libraryModel
-}
-
+        id: libraryModel
+    }
+    onClicked:{
+        console.log(row)
+        sniffer.selectPacket(row)
+    }
     Connections {
     target: sniffer
     onNewPacketCatched: {

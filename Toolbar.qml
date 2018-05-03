@@ -45,6 +45,11 @@ RowLayout {
         ComboBox {
             id: filterComboBox
             Layout.fillWidth: true
+            model: sniffer.filterList()
+            onActivated:{
+                console.log(index)
+                sniffer.selectFilter(index)
+            }
         }
     }
 
