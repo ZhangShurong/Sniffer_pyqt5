@@ -2,10 +2,7 @@ import QtQuick 2.0
 import QtQuick.Controls 1.4
 import QtQuick.Layouts 1.3
 
-
-
 RowLayout {
-
     spacing: 10
     anchors.left: parent.left
     anchors.right: parent.right
@@ -66,6 +63,15 @@ RowLayout {
             id: ipText
             Layout.fillWidth: true
             placeholderText: qsTr("Target IP")
+            onTextChanged : {
+                var reg = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/
+                if(reg.test(text) || text.length == 0) {
+                    start.enabled = true
+                   }
+                   else {
+                   start.enabled = false
+                   }
+            }
 
         }
     }
@@ -75,10 +81,10 @@ RowLayout {
         text: qsTr("Start")
         Layout.alignment: Qt.AlignBottom
         onClicked:{
-            console.log(ipText.text)
-
-            sniffer.start_sniff(ipText.text)
+               sniffer.start_sniff(ipText.text)
         }
+        enabled: true
+
     }
 
     Button {
@@ -100,8 +106,10 @@ RowLayout {
         id: save
         text: qsTr("Save")
         Layout.alignment: Qt.AlignBottom
+        onClicked:{
+            sniffer.save_pcap()
+        }
     }
-
 }
 
 

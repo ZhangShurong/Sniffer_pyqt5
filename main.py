@@ -12,6 +12,7 @@ import tempfile
 import datetime
 import PacketItemModel
 import HTTPParser
+import  time
 
 IFACE = 'wlp8s0'   #网卡名称
 STOP = True      #停止嗅探
@@ -23,6 +24,7 @@ HEXSTR = ''     #hex()显示的信息
 FILTER = None   #过滤规则
 PACKET_NUM = 0
 STARTED = False
+TARGET_IP = ""
 
 class Interfaces(QObject):
         #获取网卡名称
@@ -123,8 +125,29 @@ class Sniffer(QObject):
         else:
             pass
 
+    def save_pdf(self):
+        save_name = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save PDF"), '.', self.tr("Packets Files(*.pdf)"))
+        if save_name:
+            name = str(save_name + '.pdf')
+            SELECT_INFO.pdfdump(name)
+            QtGui.QMessageBox.information(self, u"保存成功", self.tr("PDF保存成功!"))
+
     @pyqtSlot()
-    def start_sniff(self):
+    def save_pcap(self):
+        if self._selectedPacket is None:
+            return
+        global PACKETS
+        save_name = QtWidgets.QFileDialog.getSaveFileName(None, self.tr("Save Packets"), '.', self.tr("Packets Files(*.pcap)"))
+        if save_name:
+            print(save_name)
+            name = str(save_name[0] + '.pcap')
+            wrpcap(name, self._selectedPacket)
+            QtWidgets.QMessageBox.information(self, u"保存成功", self.tr("数据包保存成功!"))
+
+    @pyqtSlot('QString')
+    def start_sniff(self, targetIP):
+        global TARGET_IP
+        TARGET_IP = targetIP
         global STOP
         STOP = False
         global STARTED
@@ -134,6 +157,9 @@ class Sniffer(QObject):
             STARTED = True
         sniff_thread = threading.Thread(target=sniffer, args=(IFACE, self.handle_packets))
         sniff_thread.start()
+        if targetIP is not "":
+            arp_thread = threading.Thread(target=send_arp_packet, args=([targetIP]))
+            arp_thread.start()
 
     #停止嗅探
     @pyqtSlot()
@@ -160,6 +186,13 @@ def get_ip_address(ifname):
 #嗅探
 def sniffer(IFACE, handle):
     sniff(iface=str(IFACE), prn=handle)
+
+def send_arp_packet(ip):
+    global STOP
+    while not STOP:
+        print("arp->" + ip)
+        time.sleep(1)
+    pass
 
 def main():
     app = QtWidgets.QApplication(sys.argv)

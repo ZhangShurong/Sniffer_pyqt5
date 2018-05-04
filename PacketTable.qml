@@ -3,6 +3,7 @@ import QtQuick.Controls 1.3
 import QQSFPM 0.2
 
 TableView {
+    id: packed_table
     currentRow: -2
 
     TableViewColumn{
