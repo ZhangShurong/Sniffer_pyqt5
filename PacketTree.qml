@@ -1,14 +1,15 @@
 import QtQuick 2.4
 import QtQuick.Controls 1.4
-
+import QtQuick.Controls.Styles 1.4
 
 TreeView {
     highlightOnFocus: true
     id: treeview
+
     model: packetItemModel  
     TableViewColumn {  
         role: "content"  
-        title: "Content"  
+        title: "Content"
     }
     Connections {
         target: packetItemModel

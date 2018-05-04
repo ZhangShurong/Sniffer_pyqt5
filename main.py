@@ -58,10 +58,22 @@ class Sniffer(QObject):
     hexChanged = pyqtSignal(str, arguments = ["hex"])
     packetItemModel = PacketItemModel.TreeModel()
     filterSelected = pyqtSignal(str, arguments = ["pattern"])
+    updateCount = pyqtSignal(int, int, int, int, int, int, int, int,
+                             arguments = ['total', 'ipv4', 'ipv6', 'tcp', 'udp', 'arp', 'http', 'icmp'])
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._filterList = ['','TCP', 'UDP', 'ARP', 'ICMP','HTTP']
+        self._filterList = ['','TCP', 'UDP', 'ARP', 'ICMP','HTTP', 'IPV6']
         self._selectedPacket = None
+
+        #统计数据
+        self.ipv4_count = 0
+        self.ipv6_count = 0
+        self.tcp_count = 0
+        self.udp_count = 0
+        self.arp_count = 0
+        self.http_count = 0
+        self.icmp_count = 0
+
     
     @pyqtSlot(result=list)
     def filterList(self):
@@ -78,7 +90,6 @@ class Sniffer(QObject):
         self._selectedPacket = PACKETS[index]
         self.packetItemModel.setPacket(self._selectedPacket)
         self.hexChanged.emit(hexdump(self._selectedPacket, True))
-
         
     #处理数据包
     def handle_packets(self, packet):
@@ -91,6 +102,7 @@ class Sniffer(QObject):
         PACKET_NUM += 1
         lenth = len(packet)
         if int(packet.getlayer(Ether).type) == 34525:
+            self.ipv6_count += 1
             proto = 'IPv6'
             src = str(packet.getlayer(IPv6).src)
             dst = str(packet.getlayer(IPv6).dst)
@@ -103,27 +115,32 @@ class Sniffer(QObject):
             info = str(packet.summary())
             proto = ''
             if int(packet.getlayer(IP).proto) == 6:
+                self.tcp_count += 1
                 proto = 'TCP'
                 if packet.haslayer(TCP):
                     if HTTPParser.isHTTP(packet):
+                        self.http_count += 1
                         proto = 'HTTP'
                         info = HTTPParser.generateInfo(packet)
             elif int(packet.getlayer(IP).proto) == 17:
                 proto = 'UDP'
+                self.udp_count += 1
             elif int(packet.getlayer(IP).proto) == 1:
                 proto = 'ICMP'
+                self.icmp_count += 1
             self.newPacketCatched.emit(str(PACKET_NUM), nowTime, src, dst, proto, str(lenth), info)
             PACKETS.append(packet)
         elif int(packet.getlayer(Ether).type) == 2054:
             proto = 'ARP'
+            self.arp_count += 1
             src = str(packet.getlayer(ARP).psrc)
             dst = str(packet.getlayer(ARP).pdst)
             info = str(packet.summary())
             #self.packet_table.row_append(src, dst, proto, info)
             self.newPacketCatched.emit(str(PACKET_NUM), nowTime, src, dst, proto, str(lenth), info)
             PACKETS.append(packet)
-        else:
-            pass
+        self.updateCount.emit(PACKET_NUM, self.ipv4_count, self.ipv6_count, self.tcp_count, self.udp_count,
+                              self.arp_count, self.http_count, self.icmp_count)
 
     def save_pdf(self):
         save_name = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save PDF"), '.', self.tr("Packets Files(*.pdf)"))
@@ -142,7 +159,7 @@ class Sniffer(QObject):
             print(save_name)
             name = str(save_name[0] + '.pcap')
             wrpcap(name, self._selectedPacket)
-            QtWidgets.QMessageBox.information(self, u"保存成功", self.tr("数据包保存成功!"))
+            QtWidgets.QMessageBox.information(None, u"保存成功", self.tr("数据包保存成功!"))
 
     @pyqtSlot('QString')
     def start_sniff(self, targetIP):
@@ -196,6 +213,7 @@ def send_arp_packet(ip):
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
+    app.setFont(QtGui.QFont("Ubuntu Mono"))
     engine = QtQml.QQmlApplicationEngine()
     interfaces = Interfaces()
     engine.rootContext().setContextProperty('interfaces', interfaces)

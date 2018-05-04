@@ -12,6 +12,7 @@ TableView {
         title: "No."
         width: 60
         horizontalAlignment: Text.AlignHCenter
+
     }
 
     TableViewColumn{
