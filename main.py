@@ -22,6 +22,7 @@ SHOW2STR = ''   #show2()显示的字符串
 HEXSTR = ''     #hex()显示的信息
 FILTER = None   #过滤规则
 PACKET_NUM = 0
+STARTED = False
 
 class Interfaces(QObject):
         #获取网卡名称
@@ -44,17 +45,20 @@ class Interfaces(QObject):
 
     @pyqtSlot('int')
     def selected(self, result):
-        print(result)
+        global IFACE
+        IFACE = self._interfaceList[result]
 
     addElement = pyqtSignal(str, str)   #you call it like this  - addElement.emit("name", "value")
 
 class Sniffer(QObject):
     newPacketCatched = pyqtSignal(str, str, str, str, str, str, str,
                 arguments = ["number", "time","sourceip","destip","procotol","lenth","info"])
+    hexChanged = pyqtSignal(str, arguments = ["hex"])
     packetItemModel = PacketItemModel.TreeModel()
+    filterSelected = pyqtSignal(str, arguments = ["pattern"])
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._filterList = ['TCP', 'UDP', 'ARP', 'ICMP']
+        self._filterList = ['','TCP', 'UDP', 'ARP', 'ICMP','HTTP']
         self._selectedPacket = None
     
     @pyqtSlot(result=list)
@@ -64,34 +68,38 @@ class Sniffer(QObject):
     @pyqtSlot('int')
     def selectFilter(self, index):
         print(index)
+        self.filterSelected.emit(self._filterList[index])
 
     @pyqtSlot('int')
     def selectPacket(self, index):
         global PACKETS
         self._selectedPacket = PACKETS[index]
         self.packetItemModel.setPacket(self._selectedPacket)
-        # print(self._selectedPacket.show2())
+        self.hexChanged.emit(hexdump(self._selectedPacket, True))
 
-        
         
     #处理数据包
     def handle_packets(self, packet):
+        global STOP
+        if STOP:
+            print("stop sniff")
+            return
         nowTime=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         global PACKET_NUM
         PACKET_NUM += 1
         lenth = len(packet)
-        if int(packet.getlayer(Ether).type) == 34525 and STOP:
+        if int(packet.getlayer(Ether).type) == 34525:
             proto = 'IPv6'
             src = str(packet.getlayer(IPv6).src)
             dst = str(packet.getlayer(IPv6).dst)
             info = str(packet.summary())
             self.newPacketCatched.emit(str(PACKET_NUM), nowTime, src, dst, proto, str(lenth), info)
             PACKETS.append(packet)
-        elif int(packet.getlayer(Ether).type) == 2048 and STOP:
+        elif int(packet.getlayer(Ether).type) == 2048:
             src = str(packet.getlayer(IP).src)
             dst = str(packet.getlayer(IP).dst)
             info = str(packet.summary())
-
+            proto = ''
             if int(packet.getlayer(IP).proto) == 6:
                 proto = 'TCP'
                 if packet.haslayer(TCP):
@@ -104,7 +112,7 @@ class Sniffer(QObject):
                 proto = 'ICMP'
             self.newPacketCatched.emit(str(PACKET_NUM), nowTime, src, dst, proto, str(lenth), info)
             PACKETS.append(packet)
-        elif int(packet.getlayer(Ether).type) == 2054 and STOP:
+        elif int(packet.getlayer(Ether).type) == 2054:
             proto = 'ARP'
             src = str(packet.getlayer(ARP).psrc)
             dst = str(packet.getlayer(ARP).pdst)
@@ -117,6 +125,13 @@ class Sniffer(QObject):
 
     @pyqtSlot()
     def start_sniff(self):
+        global STOP
+        STOP = False
+        global STARTED
+        if STARTED:
+            return
+        else:
+            STARTED = True
         sniff_thread = threading.Thread(target=sniffer, args=(IFACE, self.handle_packets))
         sniff_thread.start()
 
@@ -124,10 +139,12 @@ class Sniffer(QObject):
     @pyqtSlot()
     def stop_sniff(self):
         global STOP
-        STOP = False
+        STOP = True
 
     #重新开始
     def restart_sniff(self):
+        global STOP
+        STOP = False
         pass
 
     #过滤数据包

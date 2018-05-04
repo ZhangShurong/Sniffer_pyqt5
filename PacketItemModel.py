@@ -130,7 +130,7 @@ class TreeModel(QAbstractItemModel):
             info = str(packet.summary())
             
         elif int(packet.getlayer(Ether).type) == 2048:
-
+            proto = "Ethernet"
             if int(packet.getlayer(IP).proto) == 6:
                 proto = 'TCP'
             elif int(packet.getlayer(IP).proto) == 17:

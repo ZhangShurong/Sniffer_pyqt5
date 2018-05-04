@@ -75,7 +75,9 @@ RowLayout {
         text: qsTr("Start")
         Layout.alignment: Qt.AlignBottom
         onClicked:{
-            sniffer.start_sniff()
+            console.log(ipText.text)
+
+            sniffer.start_sniff(ipText.text)
         }
     }
 

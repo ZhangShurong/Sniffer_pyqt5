@@ -1,6 +1,6 @@
 import QtQuick 2.4
 import QtQuick.Controls 1.3
-
+import QQSFPM 0.2
 
 TableView {
     currentRow: -2
@@ -61,12 +61,22 @@ TableView {
         width: parent.width - 620
         horizontalAlignment: Text.AlignHCenter
     }
-    model: ListModel {
+    ListModel {
         id: libraryModel
     }
+    model: packetProxyModel
+    SortFilterProxyModel {
+        id: packetProxyModel
+        sourceModel: libraryModel
+        filters: RegExpFilter {
+            roleName:"procotol"
+            pattern:""
+            caseSensitivity:Qt.CaseInsensitive
+        }
+    }
     onClicked:{
-        console.log(row)
-        sniffer.selectPacket(row)
+        console.log(packetProxyModel.get(row).number)
+        sniffer.selectPacket(packetProxyModel.get(row).number - 1)
     }
     Connections {
     target: sniffer
@@ -79,7 +89,19 @@ TableView {
                 "procotol" : procotol,
                 "lenth": lenth,
                 "info": info
-            })
+        })
+    }
+    property  list<RegExpFilter> filters_test: [
+    RegExpFilter {
+            id:filter
+            roleName:"procotol"
+            pattern:""
+            caseSensitivity:Qt.CaseInsensitive
+    }
+    ]
+    onFilterSelected: {
+        filters_test[0].pattern = pattern
+        packetProxyModel.filters = filters_test
     }
   }
 }

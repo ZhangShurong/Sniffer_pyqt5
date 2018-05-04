@@ -22,18 +22,17 @@ def generateInfo(packet):
     if tcp_packet.dport == 80:
         if packet.haslayer(Raw):
             packet_str = packet.getlayer(Raw).load.decode(errors = 'ignore')
-            if packet_str.startswith('GET'):
-                end_index = packet_str.index('HTTP')
-                return packet_str[0:end_index]
-            elif packet_str.startswith('POST'):
-                end_index = packet_str.index('HTTP')
-                return packet_str[0: end_index]
+            if packet_str.startswith('GET') or packet_str.startswith('POST'):
+                if 'HTTP' in packet_str:
+                    end_index = packet_str.index('HTTP') if packet_str.index('HTTP') <= 100 else 100
+                    return packet_str[0:end_index]
     if tcp_packet.sport == 80:
         if packet.haslayer(Raw):
             packet_str = packet.getlayer(Raw).load.decode(errors = 'ignore')
             if packet_str.startswith('HTTP'):
-                end_index = packet_str.index('Server')
-                return packet_str[0:end_index]
+                if 'Server' in packet_str:
+                    end_index = packet_str.index('Server') if packet_str.index('Server') <= 100 else 100
+                    return packet_str[0:end_index]
     return ""
 
     

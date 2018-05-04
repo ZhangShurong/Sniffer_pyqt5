@@ -37,8 +37,6 @@ Window {
             Layout.minimumHeight: 80
             Layout.fillWidth: true
         }
-        
-        
     }
 
 
