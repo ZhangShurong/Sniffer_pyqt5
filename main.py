@@ -12,7 +12,8 @@ import tempfile
 import datetime
 import PacketItemModel
 import HTTPParser
-import  time
+import time
+
 
 IFACE = 'wlp8s0'   #网卡名称
 STOP = True      #停止嗅探
@@ -142,12 +143,13 @@ class Sniffer(QObject):
         self.updateCount.emit(PACKET_NUM, self.ipv4_count, self.ipv6_count, self.tcp_count, self.udp_count,
                               self.arp_count, self.http_count, self.icmp_count)
 
+    @pyqtSlot()
     def save_pdf(self):
-        save_name = QtGui.QFileDialog.getSaveFileName(self, self.tr("Save PDF"), '.', self.tr("Packets Files(*.pdf)"))
+        save_name = QtWidgets.QFileDialog.getSaveFileName(None, self.tr("Save PDF"), '.', self.tr("Packets Files(*.pdf)"))
         if save_name:
-            name = str(save_name + '.pdf')
-            SELECT_INFO.pdfdump(name)
-            QtGui.QMessageBox.information(self, u"保存成功", self.tr("PDF保存成功!"))
+            name = str(save_name[0] + '.pdf')
+            self._selectedPacket.pdfdump(name)
+            QtWidgets.QMessageBox.information(None, u"保存成功", self.tr("PDF保存成功!"))
 
     @pyqtSlot()
     def save_pcap(self):

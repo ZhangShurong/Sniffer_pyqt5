@@ -20,7 +20,6 @@ RowLayout {
         ComboBox {
             id: interfaceComboBox
             Layout.fillWidth: true
-            //model: ["First", "Second", "Third"]
             model: interfaces.interfaceList()
             onActivated:{
                 console.log(index)
@@ -52,13 +51,10 @@ RowLayout {
 
     ColumnLayout {
         id: columnLayout
-
-
         Label {
             id: ipLabel
             text: qsTr("Target IP")
         }
-
         TextField {
             id: ipText
             Layout.fillWidth: true
@@ -72,7 +68,6 @@ RowLayout {
                    start.enabled = false
                    }
             }
-
         }
     }
 
@@ -108,6 +103,14 @@ RowLayout {
         Layout.alignment: Qt.AlignBottom
         onClicked:{
             sniffer.save_pcap()
+        }
+    }
+    Button {
+        id: save_pdf
+        text: qsTr("PDF")
+        Layout.alignment: Qt.AlignBottom
+        onClicked:{
+            sniffer.save_pdf()
         }
     }
 }

@@ -22,6 +22,7 @@ A sniffer built on pyqt5
     ```shell
     $ sudo python main.py
     ```
+    If you want to save pdf, you need to install pyx
 
     ![MainWindow](readmepics/MainWindow.png)
     ![Start](readmepics/Start.png)
