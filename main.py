@@ -1,4 +1,3 @@
-import sys  
 from PyQt5.QtCore import pyqtProperty, QCoreApplication, QObject, QUrl, pyqtSignal, pyqtSlot
 from PyQt5.QtQml import qmlRegisterType, QQmlComponent, QQmlEngine
 from PyQt5 import QtCore, QtGui, QtWidgets, QtQml,QtQuick
@@ -8,7 +7,6 @@ import fcntl
 import struct
 from scapy.all import *
 import threading
-import tempfile
 import datetime
 import PacketItemModel
 import HTTPParser
