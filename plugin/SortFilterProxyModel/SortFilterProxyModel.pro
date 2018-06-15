@@ -1,7 +1,7 @@
 !c++11: warning("SortFilterProxyModel needs c++11, add CONFIG += c++11 to your .pro")
 
 TEMPLATE = lib
-CONFIG += plugin
+CONFIG += plugin c++11
 QT += qml
 INCLUDEPATH += $$PWD
 

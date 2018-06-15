@@ -270,19 +270,25 @@ class TreeModel(QAbstractItemModel):
                 type_str = "Type: {:d} {icmp_type}".format(icmp_packet.type,icmp_type =  icmp_type)
                 code_str = "Code: {:d}".format(icmp_packet.code)
                 chksum_str = "Checksum: 0x{:04x}".format(icmp_packet.chksum)
-                id_str = "Identifier : {:d} (0x{:04x})".format(icmp_packet.id, icmp_packet.id)
-                seq_str = "Sequence number : {:d} (0x{:04x})".format(icmp_packet.seq, icmp_packet.seq)
+
                 icmp_item = TreeItem([icmp_str], self.rootItem)
                 type_item = TreeItem([type_str], icmp_item)
                 code_item = TreeItem([code_str], icmp_item)
                 chksum_item = TreeItem([chksum_str], icmp_item)
-                id_item = TreeItem([id_str], icmp_item)
-                seq_item = TreeItem([seq_str], icmp_item)
+                if(icmp_packet.id):
+                    id_str = "Identifier : {:d} (0x{:04x})".format(icmp_packet.id, icmp_packet.id)
+                    id_item = TreeItem([id_str], icmp_item)
+                    icmp_item.appendChild(id_item)
+                if (icmp_packet.seq):
+                    seq_str = "Sequence number : {:d} (0x{:04x})".format(icmp_packet.seq, icmp_packet.seq)
+                    seq_item = TreeItem([seq_str], icmp_item)
+                    icmp_item.appendChild(seq_item)
+
                 icmp_item.appendChild(type_item)
                 icmp_item.appendChild(code_item)
                 icmp_item.appendChild(chksum_item)
-                icmp_item.appendChild(id_item)
-                icmp_item.appendChild(seq_item)
+
+
                 self.rootItem.appendChild(icmp_item)
 
 

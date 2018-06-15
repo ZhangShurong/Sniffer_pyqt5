@@ -127,6 +127,7 @@ class Sniffer(QObject):
             self.newPacketCatched.emit(str(PACKET_NUM), nowTime, src, dst, proto, str(lenth), info)
             PACKETS.append(packet)
         elif int(packet.getlayer(Ether).type) == 2048:
+            self.ipv4_count+=1
             src = str(packet.getlayer(IP).src)
             dst = str(packet.getlayer(IP).dst)
             info = str(packet.summary())
